@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Family Packing List</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <h1>Packing List </h1>
+  <h3> for ~3 weeks trip! </h3>
+  <div id="shared-notes-container">
+
+  <h2>📌 Notes </h2>
+  <div class="toolbar">
+    <button onclick="formatText('bold')"><b>B</b></button>
+    <button onclick="formatText('italic')"><i>I</i></button>
+    <button onclick="formatText('underline')"><u>U</u></button>
+    <button onclick="formatText('insertUnorderedList')">• List</button>
+    <button onclick="clearNotes()">🗑️ Clear</button>
+  </div>
+  <div id="shared-notes" contenteditable="true" spellcheck="true" placeholder="Type announcements here..."></div>
+</div>
+
+  <div class="member-buttons" id="member-buttons"></div>
+  <button class="add-member" id="add-member-btn" onclick="addFamilyMember()">+ Add Family Member</button>
+
+  <div id="controls">
+    <h2 id="person-heading"></h2>
+    <button class="clear-btn" onclick="clearAll()">Clear All for this Person</button>
+  </div>
+
+  <div class="container" id="list-container"></div>
+  <div id="congrats">🎉 All packed! Have a safe trip! ✈️</div>
+  <button class="back-btn" onclick="goBack()">← Back to Members</button>
+
+  <script src="script.js"></script>
+</body>
+</html>
