@@ -41,7 +41,7 @@ const defaultCategories = {
     ["Pads/tampons", "Bring full cycle's worth"],
     ["Hand sanitizer", "Pocket-sized"]
   ],
-  "Skincare/Makeup (Optional)": [
+  "Skincare/Makeup": [
     ["Light makeup", "BB cream, powder, mascara, etc."],
     ["Makeup remover", "Wipes or micellar water"],
     ["Lip balm", "Preferably with SPF"],
@@ -137,9 +137,12 @@ function loadChecklist(person) {
   document.getElementById("person-heading").textContent = `${person}'s Packing List`;
   document.getElementById("member-buttons").style.display = "none";
   document.getElementById("list-container").style.display = "flex";
-  document.querySelector(".back-btn").style.display = "block";
+  document.querySelectorAll('.back-btn').forEach(btn => btn.style.display = 'block');
   document.querySelector('button.clear-btn').style.display = "inline-block";
   document.getElementById("congrats").style.display = "none";
+
+  document.getElementById("controls").style.display = "block";
+
   createList();
 }
 
@@ -158,6 +161,13 @@ function createList() {
     section.className = "category";
 
     // Title & check all button
+    const headerDiv = document.createElement("div");
+    headerDiv.style.display = "flex";
+    headerDiv.style.alignItems = "center";
+    headerDiv.style.justifyContent = "space-between";
+    headerDiv.style.flexWrap = "wrap";
+    headerDiv.style.gap = "10px"; // optional for spacing
+
     const title = document.createElement("h2");
     title.textContent = category;
 
@@ -172,10 +182,50 @@ function createList() {
       createList();
     };
 
-    section.appendChild(title);
-    section.appendChild(checkAllBtn);
+    
+    const deleteCategoryBtn = document.createElement("button");
+    deleteCategoryBtn.textContent = "🗑️";
+    deleteCategoryBtn.className = "delete-category-btn";
+    deleteCategoryBtn.title = "Delete this category";
+    deleteCategoryBtn.onclick = () => {
+        if (confirm(`Delete category "${category}"? This will remove all items under it.`)) {
+            delete categories[category];
+            saveCategoriesForPerson(currentPerson, categories);
+            createList();
+        }
+    };
+
+    // Create toggle button BEFORE appending headerDiv
+    const toggleBtn = document.createElement("button");
+    toggleBtn.textContent = "🔽";
+    toggleBtn.className = "toggle-category-btn";
+    toggleBtn.title = "Collapse/Expand";
+
+    toggleBtn.onclick = () => {
+        const isCollapsed = section.classList.toggle("collapsed");
+        toggleBtn.textContent = isCollapsed ? "▶️" : "🔽";
+    };
+
+    // Append header elements
+    headerDiv.appendChild(title);
+    headerDiv.appendChild(checkAllBtn);
+    headerDiv.appendChild(deleteCategoryBtn);
+    headerDiv.appendChild(toggleBtn);
+
+    // Append header to section
+    section.appendChild(headerDiv);
+
+
 
     let categoryDone = true;
+
+    // Add BEFORE categories[category].forEach(...) loop:
+    const categoryContent = document.createElement("div");
+    categoryContent.className = "category-content";
+    categoryContent.style.display = "flex";
+    categoryContent.style.flexDirection = "column";
+    categoryContent.style.gap = "6px";
+    categoryContent.style.width = "100%";
 
     // List each item with editable name, note, checkbox, and delete button
     categories[category].forEach(([item, note], index) => {
@@ -252,44 +302,32 @@ function createList() {
         }
       };
 
-      // Add item input fields and button
-    const addItemRow = document.createElement("div");
-    addItemRow.className = "add-item-row";
+      // Row container
+      const rowDiv = document.createElement("div");
+      rowDiv.style.display = "flex";
+      rowDiv.style.alignItems = "center";
+      rowDiv.style.justifyContent = "space-between";
+      rowDiv.style.width = "100%";
+      rowDiv.style.gap = "6px";
 
-    const newItemInput = document.createElement("input");
-    newItemInput.type = "text";
-    newItemInput.placeholder = "New item name";
+      // Left section: checkbox + item name
+      const leftDiv = document.createElement("div");
+      leftDiv.style.display = "flex";
+      leftDiv.style.alignItems = "center";
+      leftDiv.style.gap = "10px";
+      leftDiv.appendChild(checkbox);
+      leftDiv.appendChild(itemSpan);
 
-    const newNoteInput = document.createElement("input");
-    newNoteInput.type = "text";
-    newNoteInput.placeholder = "Optional note";
+      // Add left section and delete button
+      rowDiv.appendChild(leftDiv);
+      rowDiv.appendChild(delBtn);
 
-    const addBtn = document.createElement("button");
-    addBtn.textContent = "+ Add Item";
-    addBtn.className = "add-btn";
-    addBtn.onclick = () => {
-    const name = newItemInput.value.trim();
-    const note = newNoteInput.value.trim();
-    if (name) {
-        categories[category].push([name, note]);
-        saved[name] = false;
-        localStorage.setItem("packingList_" + currentPerson, JSON.stringify(saved));
-        createList();
-    }
-    };
-
-    addItemRow.appendChild(newItemInput);
-    addItemRow.appendChild(newNoteInput);
-    addItemRow.appendChild(addBtn);
-    section.appendChild(addItemRow);
-
-
-      label.appendChild(checkbox);
-      label.appendChild(itemSpan);
+      // Add rows to label
+      label.appendChild(rowDiv);
       label.appendChild(noteSpan);
-      label.appendChild(delBtn);
 
-      section.appendChild(label);
+      categoryContent.appendChild(label);
+      
     });
 
     // Add new item input + button for this category
@@ -337,7 +375,8 @@ function createList() {
     addItemDiv.appendChild(newNoteInput);
     addItemDiv.appendChild(addBtn);
 
-    section.appendChild(addItemDiv);
+    categoryContent.appendChild(addItemDiv);
+    section.appendChild(categoryContent);
 
     if (categoryDone && categories[category].length > 0) {
       section.classList.add("done");
@@ -367,9 +406,11 @@ function goBack() {
   currentPerson = "";
   document.getElementById("member-buttons").style.display = "flex";
   document.getElementById("list-container").style.display = "none";
-  document.querySelector(".back-btn").style.display = "none";
+  document.querySelectorAll('.back-btn').forEach(btn => btn.style.display = 'none');
 
-  document.querySelector('button.clear-btn').style.display = "none";  
+  document.querySelector('button.clear-btn').style.display = "none";
+  document.getElementById("controls").style.display = "none";
+  
   
   document.getElementById("congrats").style.display = "none";
   document.getElementById("person-heading").textContent = "";
@@ -427,25 +468,52 @@ function editMember(name) {
   }
 }
 
-// Notes formatting toolbar
-function formatText(command) {
-  document.execCommand(command, false, null);
-}
+// === Shared Notes Persistence ===
+const sharedNotes = document.getElementById("shared-notes");
 
-// Save shared notes to localStorage
-const notesBox = document.getElementById("shared-notes");
-notesBox.innerHTML = localStorage.getItem("sharedNotes") || "";
+// Load notes from localStorage on load
+sharedNotes.innerHTML = localStorage.getItem("sharedNotes") || "<p>Write your shared notes here...</p>";
 
-notesBox.addEventListener("input", () => {
-  localStorage.setItem("sharedNotes", notesBox.innerHTML);
+// Save notes on input
+sharedNotes.addEventListener("input", () => {
+    localStorage.setItem("sharedNotes", sharedNotes.innerHTML);
 });
 
-function clearNotes() {
-  if (confirm("Clear all shared notes?")) {
-    notesBox.innerHTML = "";
-    localStorage.removeItem("sharedNotes");
-  }
-}
+// === Back to Top Button ===
+const backToTopBtn = document.getElementById("back-to-top-btn");
+
+// Show button when scrolling down
+window.addEventListener("scroll", () => {
+    if (document.body.scrollTop > 250 || document.documentElement.scrollTop > 250) {
+        backToTopBtn.style.display = "block";
+    } else {
+        backToTopBtn.style.display = "none";
+    }
+});
+
+// Scroll to top on click
+backToTopBtn.addEventListener("click", () => {
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+});
+
+document.getElementById("add-category-btn").addEventListener("click", () => {
+    const categoryName = prompt("Enter new category name:");
+    if (categoryName && categoryName.trim() !== "") {
+        const trimmed = categoryName.trim();
+        let categories = loadCategoriesForPerson(currentPerson);
+        if (categories[trimmed]) {
+            alert("This category already exists.");
+            return;
+        }
+        categories[trimmed] = [];
+        saveCategoriesForPerson(currentPerson, categories);
+        createList();
+    }
+});
+
 
 // Initial render
 renderFamilyButtons();
