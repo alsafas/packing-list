@@ -1,4 +1,6 @@
 // Default categories data (used when person has no saved data yet)
+const SHEETDB_API_URL = "https://sheetdb.io/api/v1/pn72a5c2hc75l";
+
 const defaultCategories = {
   "Travel Essentials": [
     ["Phone charger + power bank", "Bring all 3, power bank at least 10,000 mAh"],
@@ -101,37 +103,68 @@ function renderFamilyButtons() {
 }
 
 // Load categories for person from localStorage or default
-function loadCategoriesForPerson(person) {
-  const savedData = localStorage.getItem("categories_" + person);
-  if (savedData) {
-    try {
-      return JSON.parse(savedData);
-    } catch {
+async function loadCategoriesForPerson(person) {
+  try {
+    const res = await fetch(`${SHEETDB_API_URL}/search?person=${person}&type=categories`);
+    const data = await res.json();
+    if (data.length > 0) {
+      return JSON.parse(data[data.length - 1].data);
+    } else {
       return JSON.parse(JSON.stringify(defaultCategories));
     }
-  } else {
+  } catch {
     return JSON.parse(JSON.stringify(defaultCategories));
   }
 }
 
 // Save categories to localStorage for person
 function saveCategoriesForPerson(person, categories) {
-  localStorage.setItem("categories_" + person, JSON.stringify(categories));
+  fetch(SHEETDB_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      data: [{
+        person: person,
+        type: "categories",
+        data: JSON.stringify(categories)
+      }]
+    })
+  }).catch(console.error);
 }
 
+
 // Load checked state for person
-function loadCheckedForPerson(person) {
-  const savedChecked = localStorage.getItem("packingList_" + person);
-  return savedChecked ? JSON.parse(savedChecked) : {};
+async function loadCheckedForPerson(person) {
+  try {
+    const res = await fetch(`${SHEETDB_API_URL}/search?person=${person}&type=checked`);
+    const data = await res.json();
+    if (data.length > 0) {
+      return JSON.parse(data[data.length - 1].data);
+    } else {
+      return {};
+    }
+  } catch {
+    return {};
+  }
 }
 
 // Save checked state for person
 function saveCheckedForPerson(person, checked) {
-  localStorage.setItem("packingList_" + person, JSON.stringify(checked));
+  fetch(SHEETDB_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      data: [{
+        person: person,
+        type: "checked",
+        data: JSON.stringify(checked)
+      }]
+    })
+  }).catch(console.error);
 }
 
 // Main function to load checklist UI for a person
-function loadChecklist(person) {
+async function loadChecklist(person) {
   currentPerson = person;
   document.getElementById("add-member-btn").style.display = "none";
   document.getElementById("person-heading").textContent = `${person}'s Packing List`;
@@ -146,13 +179,13 @@ function loadChecklist(person) {
   createList();
 }
 
-function createList() {
+async function createList() {
   const container = document.getElementById("list-container");
   container.innerHTML = "";
 
   // Load categories and checked for current person
-  let categories = loadCategoriesForPerson(currentPerson);
-  let savedChecked = loadCheckedForPerson(currentPerson);
+  let categories = await loadCategoriesForPerson(currentPerson);
+  let savedChecked = await loadCheckedForPerson(currentPerson);
 
   let allChecked = true;
 
